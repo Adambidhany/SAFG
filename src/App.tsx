@@ -264,6 +264,37 @@ export default function App() {
             </div>
           </div>
 
+          {/* Progress Bar */}
+          <div className="w-full bg-white/5 h-2 rounded-full mb-8 overflow-hidden border border-white/5 relative">
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: `${((currentQuestionIndex + 1) / (questions.length || 5)) * 100}%` }}
+              transition={{ 
+                type: "spring", 
+                stiffness: 60, 
+                damping: 15,
+                mass: 1
+              }}
+              className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 relative shadow-[0_0_20px_rgba(16,185,129,0.3)]"
+            >
+              {/* Shimmer Effect */}
+              <motion.div
+                animate={{
+                  x: ["-100%", "100%"],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "linear",
+                }}
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent w-1/2"
+              />
+              
+              {/* Tip Glow */}
+              <div className="absolute right-0 top-0 bottom-0 w-1 bg-white shadow-[0_0_10px_#fff]" />
+            </motion.div>
+          </div>
+
           <motion.div 
             key={currentQuestionIndex}
             initial={{ opacity: 0, x: 20 }}
