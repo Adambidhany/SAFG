@@ -77,8 +77,26 @@ export default function App() {
       setOpponent(opponent);
       if (isHost) {
         const q = await generateQuizQuestions();
+        if (q.length === 0) {
+          socketRef.current?.emit("cancel_game", { gameId });
+          return;
+        }
         socketRef.current?.emit("set_questions", { gameId, questions: q });
       }
+    });
+
+    socketRef.current.on("game_cancelled", ({ reason }) => {
+      alert(reason);
+      setView("home");
+      setIsLoading(false);
+    });
+
+    socketRef.current.on("opponent_disconnected", () => {
+      alert("لقد غادر الخصم المباراة!");
+      setView("home");
+      setIsLoading(false);
+      setGameId(null);
+      setOpponent(null);
     });
 
     socketRef.current.on("game_start", ({ questions }) => {
@@ -94,6 +112,12 @@ export default function App() {
       setView("result");
       setIsLoading(false);
       fetchLeaderboard();
+      setUser(prev => {
+        if (!prev) return prev;
+        if (result.winner === prev.username) return { ...prev, points: prev.points + 10 };
+        if (result.winner === 'تعادل') return { ...prev, points: prev.points + 5 };
+        return prev;
+      });
     });
   };
 
@@ -102,6 +126,11 @@ export default function App() {
       socketRef.current.emit("join_queue", user);
       setView("queue");
     }
+  };
+
+  const cancelQueue = () => {
+    socketRef.current?.emit("leave_queue");
+    setView("home");
   };
 
   const handleAnswer = (index: number) => {
@@ -235,7 +264,7 @@ export default function App() {
         <h2 className="text-2xl font-bold mb-2">جاري البحث عن خصم...</h2>
         <p className="text-white/50">استعد، التحدي سيبدأ قريباً</p>
         <button 
-          onClick={() => setView("home")}
+          onClick={cancelQueue}
           className="mt-8 text-white/40 hover:text-white transition-colors"
         >
           إلغاء البحث
@@ -246,7 +275,16 @@ export default function App() {
 
   if (view === "game") {
     const currentQ = questions[currentQuestionIndex];
-    if (!currentQ) return null;
+    if (!currentQ) {
+      return (
+        <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center p-6" dir="rtl">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+            <p className="text-white/50">جاري تجهيز التحدي...</p>
+          </div>
+        </div>
+      );
+    }
     
     return (
       <div className="min-h-screen bg-[#0a0a0a] text-white p-6 flex flex-col items-center justify-center" dir="rtl">

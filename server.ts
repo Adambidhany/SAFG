@@ -146,7 +146,32 @@ async function startServer() {
       const index = waitingPlayers.findIndex(p => p.socketId === socket.id);
       if (index !== -1) waitingPlayers.splice(index, 1);
       
-      // Handle mid-game disconnects if needed
+      for (const [gameId, game] of activeGames.entries()) {
+        const player = game.players.find((p: any) => p.socketId === socket.id);
+        if (player) {
+          const opponent = game.players.find((p: any) => p.socketId !== socket.id);
+          if (opponent) {
+            io.to(opponent.socketId).emit("opponent_disconnected");
+          }
+          activeGames.delete(gameId);
+          break;
+        }
+      }
+    });
+
+    socket.on("leave_queue", () => {
+      const index = waitingPlayers.findIndex(p => p.socketId === socket.id);
+      if (index !== -1) waitingPlayers.splice(index, 1);
+    });
+
+    socket.on("cancel_game", ({ gameId }) => {
+      const game = activeGames.get(gameId);
+      if (game) {
+        game.players.forEach((p: any) => {
+          io.to(p.socketId).emit("game_cancelled", { reason: "فشل في تجهيز الأسئلة، يرجى المحاولة مرة أخرى." });
+        });
+        activeGames.delete(gameId);
+      }
     });
   });
 

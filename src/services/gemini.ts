@@ -35,7 +35,9 @@ export async function generateQuizQuestions(): Promise<Question[]> {
   });
 
   try {
-    return JSON.parse(response.text);
+    let text = response.text || "[]";
+    text = text.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    return JSON.parse(text);
   } catch (e) {
     console.error("Failed to parse questions", e);
     return [];
